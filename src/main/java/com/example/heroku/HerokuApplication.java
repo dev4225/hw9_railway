@@ -28,16 +28,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.util.Random;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Map;
 
+
 @Controller
 @SpringBootApplication
 public class HerokuApplication {
 
+  private static final Random RAND = new Random();
   @Value("${spring.datasource.url}")
   private String dbUrl;
 
@@ -57,8 +60,8 @@ public class HerokuApplication {
   String db(Map<String, Object> model) {
     try (Connection connection = dataSource.getConnection()) {
       Statement stmt = connection.createStatement();
-      stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ticks (tick timestamp)");
-      stmt.executeUpdate("INSERT INTO ticks VALUES (now())");
+      stmt.executeUpdate("CREATE TABLE IF NOT EXISTS table_timestamp_and_random_string (tick timestamp, random_string varchar(30))");
+      stmt.executeUpdate("INSERT INTO table_timestamp_and_random_string VALUES (now(), '" + getRandomString() + "')");
       ResultSet rs = stmt.executeQuery("SELECT tick FROM ticks");
 
       ArrayList<String> output = new ArrayList<String>();
@@ -72,6 +75,23 @@ public class HerokuApplication {
       model.put("message", e.getMessage());
       return "error";
     }
+  }
+
+  private String getRandomString() {
+    return getRandomString(15);
+  }
+
+  public static String getRandomString(int numChars) {
+    int chars = RAND.nextInt(numChars);
+    while (chars == 0)
+      chars = RAND.nextInt(numChars);
+    StringBuffer sb = new StringBuffer();
+    for (int i = 0; i < chars; i++) {
+      int index = 97 + RAND.nextInt(26);
+      char c = (char) index;
+      sb.append(c);
+    } // for
+    return sb.toString();
   }
 
   @Bean
