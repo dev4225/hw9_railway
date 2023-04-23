@@ -28,19 +28,26 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
-import java.util.Random;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Map;
-
+import java.util.Random;
 
 @Controller
 @SpringBootApplication
 public class HerokuApplication {
 
-  private static final Random RAND = new Random();
+  // Define the characters that can appear in the random string
+  private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+  // Define the length of the random string
+  private static final int LENGTH = 10;
+
+  // Create a random number generator
+  private static final Random RANDOM = new Random();
+
   @Value("${spring.datasource.url}")
   private String dbUrl;
 
@@ -62,11 +69,12 @@ public class HerokuApplication {
       Statement stmt = connection.createStatement();
       stmt.executeUpdate("CREATE TABLE IF NOT EXISTS table_timestamp_and_random_string (tick timestamp, random_string varchar(30))");
       stmt.executeUpdate("INSERT INTO table_timestamp_and_random_string VALUES (now(), '" + getRandomString() + "')");
-      ResultSet rs = stmt.executeQuery("SELECT tick FROM ticks");
+      System.out.println("Data inserted successfully!");
+      ResultSet rs = stmt.executeQuery("SELECT tick, random_string FROM table_timestamp_and_random_string");
 
       ArrayList<String> output = new ArrayList<String>();
       while (rs.next()) {
-        output.add("Read from DB: " + rs.getTimestamp("tick"));
+        output.add("Read from DB: " + rs.getTimestamp("tick") + " " + rs.getString("random_string"));
       }
 
       model.put("records", output);
@@ -75,23 +83,6 @@ public class HerokuApplication {
       model.put("message", e.getMessage());
       return "error";
     }
-  }
-
-  public String getRandomString() {
-    return getRandomString(15);
-  }
-
-  public static String getRandomString(int numChars) {
-    int chars = RAND.nextInt(numChars);
-    while (chars == 0)
-      chars = RAND.nextInt(numChars);
-    StringBuffer sb = new StringBuffer();
-    for (int i = 0; i < chars; i++) {
-      int index = 97 + RAND.nextInt(26);
-      char c = (char) index;
-      sb.append(c);
-    } // for
-    return sb.toString();
   }
 
   @Bean
@@ -103,6 +94,17 @@ public class HerokuApplication {
       config.setJdbcUrl(dbUrl);
       return new HikariDataSource(config);
     }
+  }
+
+  public static String getRandomString() {
+    StringBuilder sb = new StringBuilder(LENGTH);
+    for (int i = 0; i < LENGTH; i++) {
+      // Choose a random character from the character set and add it to the string
+      int randomIndex = RANDOM.nextInt(CHARACTERS.length());
+      char randomChar = CHARACTERS.charAt(randomIndex);
+      sb.append(randomChar);
+    }
+    return sb.toString();
   }
 
 }
