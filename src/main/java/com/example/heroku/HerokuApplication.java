@@ -77,7 +77,7 @@ public class HerokuApplication {
     }
   }
 
-  private String getRandomString() {
+  public String getRandomString() {
     return getRandomString(15);
   }
 
